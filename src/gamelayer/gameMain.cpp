@@ -1,62 +1,82 @@
-#include <raylib.h>
-#include <gameMain.h>
-#include <iostream>
-#include <textureManager.h>
 #include <Textures.h>
+#include <assetManager.h>
+#include <gameMain.h>
+#include <raylib.h>
+#include <textureManager.h>
+
+#include <iostream>
 
 struct GameData {
-    float posX = 100;
-    float posY = 100;
-    TextureManager textureManager;
-}gameData;
+  float posX = 100;
+  float posY = 100;
+} gameData;
+
+TextureManager textureManager;
+AssetManager assetManager;
 
 bool initGame() {
-    // Load all procedural textures
-    gameData.textureManager.AddTexture("dirt", CreateDirtTexture());
-    // Add more textures here as needed
-    // gameData.textureManager.AddTexture("stone", CreateTerrariaStyleStoneTexture());
-    // gameData.textureManager.AddTexture("grass", CreateTerrariaStyleGrassTexture());
-    return true;
+  // Load all procedural textures
+  assetManager.loadAll();
+  // textureManager.AddTexture("dirt", CreateDirtTexture());
+  // Add more textures here as needed
+  // gameData.textureManager.AddTexture("stone",
+  // CreateTerrariaStyleStoneTexture());
+  // gameData.textureManager.AddTexture("grass",
+  // CreateTerrariaStyleGrassTexture());
+  return true;
 }
 
 bool updateGame() {
-    Color c;
-    c.r = 0;
-    c.g = 255;
-    c.b = 200;
-    c.a = 255;
+  Color c;
+  c.r = 0;
+  c.g = 255;
+  c.b = 200;
+  c.a = 255;
 
-    int playerHeight = 20;
-    int playerWidth = 20;
-    float deltaTime = GetFrameTime();
+  int playerHeight = 20;
+  int playerWidth = 20;
+  float deltaTime = GetFrameTime();
 
-    // if delta time gets bigger than 5 frames per second keep the frame at that
-    if (deltaTime > 1.f / 5) { deltaTime = 1 / 5.f; }
+  // if delta time gets bigger than 5 frames per second keep the frame at that
+  if (deltaTime > 1.f / 5) {
+    deltaTime = 1 / 5.f;
+  }
 
-    // move player 200 pixels per second
-    if (IsKeyDown(KEY_A)) { gameData.posX -= 200.f * deltaTime; }
-    if (IsKeyDown(KEY_D)) { gameData.posX += 200.f * deltaTime; }
-    if (IsKeyDown(KEY_W)) { gameData.posY -= 200.f * deltaTime; }
-    if (IsKeyDown(KEY_S)) { gameData.posY += 200.f * deltaTime; }
+  // move player 200 pixels per second
+  if (IsKeyDown(KEY_A)) {
+    gameData.posX -= 200.f * deltaTime;
+  }
+  if (IsKeyDown(KEY_D)) {
+    gameData.posX += 200.f * deltaTime;
+  }
+  if (IsKeyDown(KEY_W)) {
+    gameData.posY -= 200.f * deltaTime;
+  }
+  if (IsKeyDown(KEY_S)) {
+    gameData.posY += 200.f * deltaTime;
+  }
+  DrawTexturePro(
+      assetManager.dirt,
+      {0, 0, (float)assetManager.dirt.width, (float)assetManager.dirt.height},
+      {50, 50, 100, 100}, {}, 0, WHITE);
+  // Texture2D dirtTexture = textureManager.GetTexture("dirt");
+  // DrawTextureEx(
+  //     dirtTexture,
+  //     {
+  //         gameData.posX,
+  //         gameData.posY
+  //     },
+  //     0.0f,
+  //     3.0f, // 16x16 -> 48x48
+  //     WHITE
+  // );
 
-    Texture2D dirtTexture = gameData.textureManager.GetTexture("dirt");
-    DrawTextureEx(
-        dirtTexture,
-        {
-            gameData.posX,
-            gameData.posY
-        },
-        0.0f,
-        3.0f, // 16x16 -> 48x48
-        WHITE
-    );
-
-    // DrawRectangle(gameData.posX, gameData.posY, playerHeight, playerWidth, c);
-    return true;
+  // DrawRectangle(gameData.posX, gameData.posY, playerHeight, playerWidth, c);
+  return true;
 }
 
 void closeGame() {
-    gameData.textureManager.UnloadAll();
-    gameData = {};
-    std::cout << "\n\nCLOSED!!!!!!!!!\n\n";
+  textureManager.UnloadAll();
+  gameData = {};
+  std::cout << "\n\nCLOSED!!!!!!!!!\n\n";
 }
