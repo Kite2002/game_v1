@@ -25,9 +25,9 @@ bool initGame() {
   gameData.gameMap.create(30, 10);
 
   gameData.gameMap.getBlockUnsafe(0, 1).type = Block::dirt;
-  gameData.gameMap.getBlockUnsafe(0, 2).type = Block::dirt;
-  gameData.gameMap.getBlockUnsafe(0, 3).type = Block::dirt;
-  gameData.gameMap.getBlockUnsafe(0, 4).type = Block::dirt;
+  gameData.gameMap.getBlockUnsafe(0, 2).type = Block::bookShelf;
+  gameData.gameMap.getBlockUnsafe(0, 3).type = Block::copperBlock;
+  gameData.gameMap.getBlockUnsafe(0, 4).type = Block::grass;
 
   gameData.camera.target = {0, 0};
   gameData.camera.rotation = 0.0f;
@@ -66,9 +66,13 @@ bool updateGame() {
         float posx = x * size;
         float posy = y * size;
 
-        DrawTexturePro(assetManager.dirt,
-                       Rectangle{0.f, 0.f, (float)assetManager.dirt.width,
-                                 float(assetManager.dirt.height)},
+        Rectangle textureUV;
+        textureUV.width = 32;
+        textureUV.height = 32;
+        textureUV.x = b.type * 32;
+        textureUV.y = 0;
+
+        DrawTexturePro(assetManager.textures, textureUV,
                        {posx, posy, size, size}, {0, 0}, 0.0f, WHITE);
       }
     }
