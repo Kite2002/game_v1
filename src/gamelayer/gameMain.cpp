@@ -1,6 +1,7 @@
 #include <Textures.h>
 #include <assetManager.h>
 #include <gameMain.h>
+#include <gameMap.h>
 #include <raylib.h>
 #include <textureManager.h>
 
@@ -9,32 +10,33 @@
 struct GameData {
   float posX = 100;
   float posY = 100;
+
+  GameMap gameMap;
+
+  Camera2D camera;
 } gameData;
 
 TextureManager textureManager;
 AssetManager assetManager;
 
 bool initGame() {
-  // Load all procedural textures
   assetManager.loadAll();
-  // textureManager.AddTexture("dirt", CreateDirtTexture());
-  // Add more textures here as needed
-  // gameData.textureManager.AddTexture("stone",
-  // CreateTerrariaStyleStoneTexture());
-  // gameData.textureManager.AddTexture("grass",
-  // CreateTerrariaStyleGrassTexture());
+
+  gameData.gameMap.create(30, 10);
+
+  gameData.gameMap.getBlockUnsafe(0, 1).type = Block::dirt;
+  gameData.gameMap.getBlockUnsafe(0, 2).type = Block::dirt;
+  gameData.gameMap.getBlockUnsafe(0, 3).type = Block::dirt;
+  gameData.gameMap.getBlockUnsafe(0, 4).type = Block::dirt;
+
+  gameData.camera.target = {0, 0};
+  gameData.camera.rotation = 0.0f;
+  gameData.camera.zoom = 100.0f;
+
   return true;
 }
 
 bool updateGame() {
-  Color c;
-  c.r = 0;
-  c.g = 255;
-  c.b = 200;
-  c.a = 255;
-
-  int playerHeight = 20;
-  int playerWidth = 20;
   float deltaTime = GetFrameTime();
 
   // if delta time gets bigger than 5 frames per second keep the frame at that
@@ -42,36 +44,37 @@ bool updateGame() {
     deltaTime = 1 / 5.f;
   }
 
-  // move player 200 pixels per second
-  if (IsKeyDown(KEY_A)) {
-    gameData.posX -= 200.f * deltaTime;
-  }
-  if (IsKeyDown(KEY_D)) {
-    gameData.posX += 200.f * deltaTime;
-  }
-  if (IsKeyDown(KEY_W)) {
-    gameData.posY -= 200.f * deltaTime;
-  }
-  if (IsKeyDown(KEY_S)) {
-    gameData.posY += 200.f * deltaTime;
-  }
-  DrawTexturePro(
-      assetManager.dirt,
-      {0, 0, (float)assetManager.dirt.width, (float)assetManager.dirt.height},
-      {50, 50, 100, 100}, {}, 0, WHITE);
-  // Texture2D dirtTexture = textureManager.GetTexture("dirt");
-  // DrawTextureEx(
-  //     dirtTexture,
-  //     {
-  //         gameData.posX,
-  //         gameData.posY
-  //     },
-  //     0.0f,
-  //     3.0f, // 16x16 -> 48x48
-  //     WHITE
-  // );
+  gameData.camera.offset = {GetScreenWidth() / 2.0f, GetScreenHeight() / 2.0f};
 
-  // DrawRectangle(gameData.posX, gameData.posY, playerHeight, playerWidth, c);
+  ClearBackground({75, 75, 150, 255});
+  BeginMode2D(gameData.camera);
+
+#pragma region camera movement
+
+  if (IsKeyDown(KEY_A)) gameData.camera.target.x -= 7.f * deltaTime;
+  if (IsKeyDown(KEY_D)) gameData.camera.target.x += 7.f * deltaTime;
+  if (IsKeyDown(KEY_W)) gameData.camera.target.y -= 7.f * deltaTime;
+  if (IsKeyDown(KEY_S)) gameData.camera.target.y += 7.f * deltaTime;
+#pragma endregion
+
+  for (int y = 0; y < gameData.gameMap.h; y++) {
+    for (int x = 0; x < gameData.gameMap.w; x++) {
+      auto& b = gameData.gameMap.getBlockUnsafe(x, y);
+
+      if (b.type != Block::air) {
+        float size = 1;
+        float posx = x * size;
+        float posy = y * size;
+
+        DrawTexturePro(assetManager.dirt,
+                       Rectangle{0.f, 0.f, (float)assetManager.dirt.width,
+                                 float(assetManager.dirt.height)},
+                       {posx, posy, size, size}, {0, 0}, 0.0f, WHITE);
+      }
+    }
+  }
+  DrawRectangle(gameData.camera.target.x, gameData.camera.target.y, 1, 1, RED);
+
   return true;
 }
 
