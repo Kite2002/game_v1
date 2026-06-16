@@ -2,6 +2,7 @@
 #include <assetManager.h>
 #include <gameMain.h>
 #include <gameMap.h>
+#include <helpers.h>
 #include <raylib.h>
 #include <textureManager.h>
 
@@ -22,16 +23,28 @@ AssetManager assetManager;
 bool initGame() {
   assetManager.loadAll();
 
-  gameData.gameMap.create(30, 10);
+  gameData.gameMap.create(20, 20);
 
-  gameData.gameMap.getBlockUnsafe(0, 1).type = Block::dirt;
-  gameData.gameMap.getBlockUnsafe(0, 2).type = Block::bookShelf;
-  gameData.gameMap.getBlockUnsafe(0, 3).type = Block::copperBlock;
-  gameData.gameMap.getBlockUnsafe(0, 4).type = Block::grass;
+  printf("tilesPerRow = %d\n", assetManager.textures.width / 32);
+  printf("tilesPerCol = %d\n", assetManager.textures.height / 32);
+  for (int y = 0; y < gameData.gameMap.h; y++)
+    for (int x = 0; x < gameData.gameMap.w; x++) {
+      float s = (std::sin(x) + 1.f) / 2.f;
+      float s2 = (std::sin(x * 0.5) + 1.f) / 2.f;
+
+      if (gameData.gameMap.h - (gameData.gameMap.h * 0.3 * s) -
+              gameData.gameMap.h * 0.5 - (gameData.gameMap.h * 0.2 * s2)
+
+          < y) {
+        gameData.gameMap.getBlockUnsafe(x, y).type = Block::bholu;
+      } else {
+        gameData.gameMap.getBlockUnsafe(x, y).type = Block::bonePlatform;
+      }
+    }
 
   gameData.camera.target = {0, 0};
   gameData.camera.rotation = 0.0f;
-  gameData.camera.zoom = 100.0f;
+  gameData.camera.zoom = 30.0f;
 
   return true;
 }
@@ -66,13 +79,8 @@ bool updateGame() {
         float posx = x * size;
         float posy = y * size;
 
-        Rectangle textureUV;
-        textureUV.width = 32;
-        textureUV.height = 32;
-        textureUV.x = b.type * 32;
-        textureUV.y = 0;
-
-        DrawTexturePro(assetManager.textures, textureUV,
+        DrawTexturePro(assetManager.textures,
+                       getTextureAtlas(b.type, 0, 32, 32),
                        {posx, posy, size, size}, {0, 0}, 0.0f, WHITE);
       }
     }
