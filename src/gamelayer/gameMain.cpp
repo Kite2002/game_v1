@@ -70,6 +70,24 @@ bool updateGame() {
   if (IsKeyDown(KEY_S)) gameData.camera.target.y += 7.f * deltaTime;
 #pragma endregion
 
+  Vector2 worldPos = GetScreenToWorld2D(GetMousePosition(), gameData.camera);
+  int blockX = (int)floor(worldPos.x);
+  int blockY = (int)floor(worldPos.y);
+
+  if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+    auto b = gameData.gameMap.getBloackSafe(blockX, blockY);
+    if (b) {
+      *b = {};
+    }
+  }
+
+  if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
+    auto b = gameData.gameMap.getBloackSafe(blockX, blockY);
+    if (b) {
+      b->type = Block::gold;
+    }
+  }
+
   for (int y = 0; y < gameData.gameMap.h; y++) {
     for (int x = 0; x < gameData.gameMap.w; x++) {
       auto& b = gameData.gameMap.getBlockUnsafe(x, y);
@@ -86,6 +104,10 @@ bool updateGame() {
     }
   }
   DrawRectangle(gameData.camera.target.x, gameData.camera.target.y, 1, 1, RED);
+  DrawTexturePro(
+      assetManager.frame,
+      {0, 0, (float)assetManager.frame.width, (float)assetManager.frame.height},
+      {(float)blockX, (float)blockY, 1, 1}, {0, 0}, 0.0f, WHITE);
 
   return true;
 }
