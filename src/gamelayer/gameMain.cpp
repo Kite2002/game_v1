@@ -3,7 +3,9 @@
 #include <gameMain.h>
 #include <gameMap.h>
 #include <helpers.h>
+#include <imgui.h>
 #include <raylib.h>
+#include <rlImGui.h>
 #include <textureManager.h>
 
 #include <iostream>
@@ -13,7 +15,7 @@ struct GameData {
   float posY = 100;
 
   GameMap gameMap;
-
+  int selectedBlock = 0;
   Camera2D camera;
 } gameData;
 
@@ -21,6 +23,10 @@ TextureManager textureManager;
 AssetManager assetManager;
 
 bool initGame() {
+#pragma region imgui
+  rlImGuiSetup(true);
+
+#pragma endregion
   assetManager.loadAll();
 
   gameData.gameMap.create(20, 20);
@@ -84,7 +90,9 @@ bool updateGame() {
   if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
     auto b = gameData.gameMap.getBloackSafe(blockX, blockY);
     if (b) {
-      b->type = Block::gold;
+      // Ensure we cast to the actual type of the field to avoid
+      // invalid static_cast from int to Block (enum class or typedef)
+      b->type = static_cast<decltype(b->type)>(gameData.selectedBlock);
     }
   }
 
@@ -107,12 +115,41 @@ bool updateGame() {
   DrawTexturePro(
       assetManager.frame,
       {0, 0, (float)assetManager.frame.width, (float)assetManager.frame.height},
-      {(float)blockX, (float)blockY, 1, 1}, {0, 0}, 0.0f, WHITE);
+      {(float)blockX, (float)blockY, 1, 1}, {0, 0}, 0.0f,
+      gameData.gameMap.getBloackSafe(blockX, blockY) ? WHITE : RED);
+  EndMode2D();
 
+#pragma region imgui
+  ImGui::Begin("Block Picker");
+  ImGui::Text("FPS: %d", GetFPS());
+  for (size_t i = 1; i < Block::BLOCKS_COUNT; i++) {
+    ImGui::PushID(i);
+
+    Rectangle src = getTextureAtlas(i, 0, 32, 32);
+    ImVec2 uv0 = {src.x / assetManager.textures.width,
+                  src.y / assetManager.textures.height};
+    ImVec2 uv1 = {(src.x + src.width) / assetManager.textures.width,
+                  (src.y + src.height) / assetManager.textures.height};
+    if (ImGui::ImageButton((ImTextureID)(intptr_t)assetManager.textures.id,
+                           ImVec2(32.0f, 32.0f), uv0, uv1, -1,
+                           ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1))) {
+      gameData.selectedBlock = i;
+    }
+    if ((i - 1) % 6 != 5) {  // 0-indexed, so button 6 is index 5
+      ImGui::SameLine(0.0f, 4.0f);
+    }
+
+    ImGui::PopID();
+  }
+  ImGui::End();
+
+#pragma endregion
   return true;
 }
 
 void closeGame() {
+  rlImGuiShutdown();  // cleans up ImGui
+
   textureManager.UnloadAll();
   gameData = {};
   std::cout << "\n\nCLOSED!!!!!!!!!\n\n";
