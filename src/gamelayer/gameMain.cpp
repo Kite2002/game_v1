@@ -29,7 +29,7 @@ bool initGame() {
 #pragma endregion
   assetManager.loadAll();
 
-  gameData.gameMap.create(20, 20);
+  gameData.gameMap.create(700, 500);
 
   printf("tilesPerRow = %d\n", assetManager.textures.width / 32);
   printf("tilesPerCol = %d\n", assetManager.textures.height / 32);
@@ -96,8 +96,17 @@ bool updateGame() {
     }
   }
 
-  for (int y = 0; y < gameData.gameMap.h; y++) {
-    for (int x = 0; x < gameData.gameMap.w; x++) {
+  Vector2 topLeftView = GetScreenToWorld2D({0, 0}, gameData.camera);
+  Vector2 bottomRightView = GetScreenToWorld2D(
+      {(float)GetScreenWidth(), (float)GetScreenHeight()}, gameData.camera);
+
+  int startXView = (int)floor(topLeftView.x = 2);
+  int startYView = (int)floor(topLeftView.y = 2);
+  int endYView = (int)floor(bottomRightView.y + 2);
+  int endXView = (int)floor(bottomRightView.x + 2);
+
+  for (int y = startYView; y < endYView; y++) {
+    for (int x = startXView; x < endXView; x++) {
       auto& b = gameData.gameMap.getBlockUnsafe(x, y);
 
       if (b.type != Block::air) {
