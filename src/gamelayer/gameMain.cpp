@@ -5,6 +5,7 @@
 #include <helpers.h>
 #include <imgui.h>
 #include <raylib.h>
+#include <raymath.h>
 #include <rlImGui.h>
 #include <textureManager.h>
 
@@ -70,10 +71,10 @@ bool updateGame() {
 
 #pragma region camera movement
 
-  if (IsKeyDown(KEY_A)) gameData.camera.target.x -= 7.f * deltaTime;
-  if (IsKeyDown(KEY_D)) gameData.camera.target.x += 7.f * deltaTime;
-  if (IsKeyDown(KEY_W)) gameData.camera.target.y -= 7.f * deltaTime;
-  if (IsKeyDown(KEY_S)) gameData.camera.target.y += 7.f * deltaTime;
+  if (IsKeyDown(KEY_A)) gameData.camera.target.x -= 79.f * deltaTime;
+  if (IsKeyDown(KEY_D)) gameData.camera.target.x += 79.f * deltaTime;
+  if (IsKeyDown(KEY_W)) gameData.camera.target.y -= 79.f * deltaTime;
+  if (IsKeyDown(KEY_S)) gameData.camera.target.y += 79.f * deltaTime;
 #pragma endregion
 
   Vector2 worldPos = GetScreenToWorld2D(GetMousePosition(), gameData.camera);
@@ -100,10 +101,17 @@ bool updateGame() {
   Vector2 bottomRightView = GetScreenToWorld2D(
       {(float)GetScreenWidth(), (float)GetScreenHeight()}, gameData.camera);
 
-  int startXView = (int)floor(topLeftView.x = 2);
-  int startYView = (int)floor(topLeftView.y = 2);
-  int endYView = (int)floor(bottomRightView.y + 2);
-  int endXView = (int)floor(bottomRightView.x + 2);
+  int startXView = (int)floor(topLeftView.x - 1);
+  int endXView = (int)ceilf(bottomRightView.x + 1);
+
+  int startYView = (int)floor(topLeftView.y - 1);
+  int endYView = (int)ceilf(bottomRightView.y + 1);
+
+  startXView = Clamp(startXView, 0, gameData.gameMap.w - 1);
+  endXView = Clamp(endXView, 0, gameData.gameMap.w - 1);
+
+  startYView = Clamp(startXView, 0, gameData.gameMap.h - 1);
+  endYView = Clamp(endXView, 0, gameData.gameMap.h - 1);
 
   for (int y = startYView; y < endYView; y++) {
     for (int x = startXView; x < endXView; x++) {
