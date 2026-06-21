@@ -122,9 +122,46 @@ bool updateGame() {
         float posx = x * size;
         float posy = y * size;
 
-        DrawTexturePro(assetManager.textures,
-                       getTextureAtlas(b.type, 0, 32, 32),
-                       {posx, posy, size, size}, {0, 0}, 0.0f, WHITE);
+        if (b.type == Block::woodLog) {
+          auto& adjLeft = gameData.gameMap.getBlockUnsafe(x - 1, y);
+          auto& adjRight = gameData.gameMap.getBlockUnsafe(x + 1, y);
+          auto& adjTop = gameData.gameMap.getBlockUnsafe(x, y - 1);
+          auto& adjBottm = gameData.gameMap.getBlockUnsafe(x, y + 1);
+
+          if (adjBottm.type != Block::woodLog &&
+              adjTop.type != Block::woodLog && adjLeft.type != Block::leaves &&
+              adjRight.type != Block::leaves) {
+            DrawTexturePro(assetManager.treeLog, getTextureAtlas(7, 0, 32, 32),
+                           {posx, posy, size, size}, {0, 0}, 0.0f, WHITE);
+          } else if (adjTop.type == Block::leaves) {
+            DrawTexturePro(assetManager.treeLog, getTextureAtlas(5, 0, 32, 32),
+                           {posx, posy, size, size}, {0, 0}, 0.0f, WHITE);
+          } else if (adjLeft.type == Block::leaves &&
+                     adjRight.type == Block::leaves) {
+            DrawTexturePro(assetManager.treeLog, getTextureAtlas(1, 0, 32, 32),
+                           {posx, posy, size, size}, {0, 0}, 0.0f, WHITE);
+          } else if (adjLeft.type == Block::leaves) {
+            DrawTexturePro(assetManager.treeLog, getTextureAtlas(3, 0, 32, 32),
+                           {posx, posy, size, size}, {0, 0}, 0.0f, WHITE);
+          } else if (adjRight.type == Block::leaves) {
+            DrawTexturePro(assetManager.treeLog, getTextureAtlas(2, 0, 32, 32),
+                           {posx, posy, size, size}, {0, 0}, 0.0f, WHITE);
+          } else if (adjTop.type != Block::woodLog) {
+            DrawTexturePro(assetManager.treeLog, getTextureAtlas(6, 0, 32, 32),
+                           {posx, posy, size, size}, {0, 0}, 0.0f, WHITE);
+          } else if (adjBottm.type != Block::woodLog) {
+            DrawTexturePro(assetManager.treeLog, getTextureAtlas(4, 0, 32, 32),
+                           {posx, posy, size, size}, {0, 0}, 0.0f, WHITE);
+          } else {
+            DrawTexturePro(assetManager.treeLog, getTextureAtlas(0, 0, 32, 32),
+                           {posx, posy, size, size}, {0, 0}, 0.0f, WHITE);
+          }
+
+        } else {
+          DrawTexturePro(assetManager.textures,
+                         getTextureAtlas(b.type, 0, 32, 32),
+                         {posx, posy, size, size}, {0, 0}, 0.0f, WHITE);
+        }
       }
     }
   }
