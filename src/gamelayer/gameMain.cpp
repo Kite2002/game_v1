@@ -16,6 +16,8 @@ struct GameData {
   float posY = 100;
 
   GameMap gameMap;
+  GameMap backGroundMap;
+
   int selectedBlock = 0;
   Camera2D camera;
 } gameData;
@@ -31,23 +33,24 @@ bool initGame() {
   assetManager.loadAll();
 
   gameData.gameMap.create(700, 500);
+  gameData.backGroundMap.create(700, 500);
 
-  printf("tilesPerRow = %d\n", assetManager.textures.width / 32);
-  printf("tilesPerCol = %d\n", assetManager.textures.height / 32);
-  for (int y = 0; y < gameData.gameMap.h; y++)
-    for (int x = 0; x < gameData.gameMap.w; x++) {
-      float s = (std::sin(x) + 1.f) / 2.f;
-      float s2 = (std::sin(x * 0.5) + 1.f) / 2.f;
+  printf("tilesPerRow = %d\n", assetManager.texturesWithWalls.width / 32);
+  printf("tilesPerCol = %d\n", assetManager.texturesWithWalls.height / 32);
+  // for (int y = 0; y < gameData.gameMap.h; y++)
+  //   for (int x = 0; x < gameData.gameMap.w; x++) {
+  //     float s = (std::sin(x) + 1.f) / 2.f;
+  //     float s2 = (std::sin(x * 0.5) + 1.f) / 2.f;
 
-      if (gameData.gameMap.h - (gameData.gameMap.h * 0.3 * s) -
-              gameData.gameMap.h * 0.5 - (gameData.gameMap.h * 0.2 * s2)
+  //     if (gameData.gameMap.h - (gameData.gameMap.h * 0.3 * s) -
+  //             gameData.gameMap.h * 0.5 - (gameData.gameMap.h * 0.2 * s2)
 
-          < y) {
-        gameData.gameMap.getBlockUnsafe(x, y).type = Block::bholu;
-      } else {
-        gameData.gameMap.getBlockUnsafe(x, y).type = Block::bonePlatform;
-      }
-    }
+  //         < y) {
+  //       gameData.gameMap.getBlockUnsafe(x, y).type = Block::woodPlank;
+  //     } else {
+  //       gameData.gameMap.getBlockUnsafe(x, y).type = Block::bonePlatform;
+  //     }
+  //   }
 
   gameData.camera.target = {0, 0};
   gameData.camera.rotation = 0.0f;
@@ -71,29 +74,45 @@ bool updateGame() {
 
 #pragma region camera movement
 
-  if (IsKeyDown(KEY_A)) gameData.camera.target.x -= 79.f * deltaTime;
-  if (IsKeyDown(KEY_D)) gameData.camera.target.x += 79.f * deltaTime;
-  if (IsKeyDown(KEY_W)) gameData.camera.target.y -= 79.f * deltaTime;
-  if (IsKeyDown(KEY_S)) gameData.camera.target.y += 79.f * deltaTime;
+  if (IsKeyDown(KEY_A)) gameData.camera.target.x -= 9.f * deltaTime;
+  if (IsKeyDown(KEY_D)) gameData.camera.target.x += 9.f * deltaTime;
+  if (IsKeyDown(KEY_W)) gameData.camera.target.y -= 9.f * deltaTime;
+  if (IsKeyDown(KEY_S)) gameData.camera.target.y += 9.f * deltaTime;
 #pragma endregion
 
   Vector2 worldPos = GetScreenToWorld2D(GetMousePosition(), gameData.camera);
   int blockX = (int)floor(worldPos.x);
   int blockY = (int)floor(worldPos.y);
 
-  if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+  if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
     auto b = gameData.gameMap.getBloackSafe(blockX, blockY);
-    if (b) {
+
+    if (b && b->type != 0) {
+      printf("%d", b->type);
       *b = {};
+    } else {
+      auto bg = gameData.backGroundMap.getBloackSafe(blockX, blockY);
+      if (bg) {
+        *bg = {};
+      }
     }
   }
 
   if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
-    auto b = gameData.gameMap.getBloackSafe(blockX, blockY);
-    if (b) {
-      // Ensure we cast to the actual type of the field to avoid
-      // invalid static_cast from int to Block (enum class or typedef)
-      b->type = static_cast<decltype(b->type)>(gameData.selectedBlock);
+    if (gameData.selectedBlock >= Block::dirtWall) {
+      auto bg = gameData.backGroundMap.getBloackSafe(blockX, blockY);
+      if (bg) {
+        // Ensure we cast to the actual type of the field to avoid
+        // invalid static_cast from int to Block (enum class or typedef)
+        bg->type = static_cast<decltype(bg->type)>(gameData.selectedBlock);
+      }
+    } else {
+      auto b = gameData.gameMap.getBloackSafe(blockX, blockY);
+      if (b) {
+        // Ensure we cast to the actual type of the field to avoid
+        // invalid static_cast from int to Block (enum class or typedef)
+        b->type = static_cast<decltype(b->type)>(gameData.selectedBlock);
+      }
     }
   }
 
@@ -113,6 +132,27 @@ bool updateGame() {
   startYView = Clamp(startXView, 0, gameData.gameMap.h - 1);
   endYView = Clamp(endXView, 0, gameData.gameMap.h - 1);
 
+#pragma region bg_rendering
+  for (int y = startYView; y < endYView; y++) {
+    for (int x = startXView; x < endXView; x++) {
+      auto& b = gameData.backGroundMap.getBlockUnsafe(x, y);
+
+      if (b.type != Block::air && b.type >= Block::dirtWall) {
+        float size = 1;
+        float posx = x * size;
+        float posy = y * size;
+
+        DrawTexturePro(assetManager.texturesWithWalls,
+                       getTextureAtlas(b.type, 0, 32, 32),
+                       {posx, posy, size, size}, {0, 0}, 0.0f, WHITE);
+      }
+    }
+  }
+  DrawRectangle(gameData.camera.target.x, gameData.camera.target.y, 1, 1, RED);
+
+#pragma endregion
+
+#pragma region foreground_rendering
   for (int y = startYView; y < endYView; y++) {
     for (int x = startXView; x < endXView; x++) {
       auto& b = gameData.gameMap.getBlockUnsafe(x, y);
@@ -123,6 +163,7 @@ bool updateGame() {
         float posy = y * size;
 
         if (b.type == Block::woodLog) {
+          // fix out of range vector in edges
           auto& adjLeft = gameData.gameMap.getBlockUnsafe(x - 1, y);
           auto& adjRight = gameData.gameMap.getBlockUnsafe(x + 1, y);
           auto& adjTop = gameData.gameMap.getBlockUnsafe(x, y - 1);
@@ -158,7 +199,7 @@ bool updateGame() {
           }
 
         } else {
-          DrawTexturePro(assetManager.textures,
+          DrawTexturePro(assetManager.texturesWithWalls,
                          getTextureAtlas(b.type, 0, 32, 32),
                          {posx, posy, size, size}, {0, 0}, 0.0f, WHITE);
         }
@@ -166,6 +207,14 @@ bool updateGame() {
     }
   }
   DrawRectangle(gameData.camera.target.x, gameData.camera.target.y, 1, 1, RED);
+  DrawTexturePro(
+      assetManager.frame,
+      {0, 0, (float)assetManager.frame.width, (float)assetManager.frame.height},
+      {(float)blockX, (float)blockY, 1, 1}, {0, 0}, 0.0f,
+      gameData.gameMap.getBloackSafe(blockX, blockY) ? WHITE : RED);
+  EndMode2D();
+#pragma endregion
+
   DrawTexturePro(
       assetManager.frame,
       {0, 0, (float)assetManager.frame.width, (float)assetManager.frame.height},
@@ -180,13 +229,14 @@ bool updateGame() {
     ImGui::PushID(i);
 
     Rectangle src = getTextureAtlas(i, 0, 32, 32);
-    ImVec2 uv0 = {src.x / assetManager.textures.width,
-                  src.y / assetManager.textures.height};
-    ImVec2 uv1 = {(src.x + src.width) / assetManager.textures.width,
-                  (src.y + src.height) / assetManager.textures.height};
-    if (ImGui::ImageButton((ImTextureID)(intptr_t)assetManager.textures.id,
-                           ImVec2(32.0f, 32.0f), uv0, uv1, -1,
-                           ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1))) {
+    ImVec2 uv0 = {src.x / assetManager.texturesWithWalls.width,
+                  src.y / assetManager.texturesWithWalls.height};
+    ImVec2 uv1 = {(src.x + src.width) / assetManager.texturesWithWalls.width,
+                  (src.y + src.height) / assetManager.texturesWithWalls.height};
+    if (ImGui::ImageButton(
+            (ImTextureID)(intptr_t)assetManager.texturesWithWalls.id,
+            ImVec2(32.0f, 32.0f), uv0, uv1, -1, ImVec4(0, 0, 0, 0),
+            ImVec4(1, 1, 1, 1))) {
       gameData.selectedBlock = i;
     }
     if ((i - 1) % 6 != 5) {  // 0-indexed, so button 6 is index 5
