@@ -1,8 +1,6 @@
+#include "gameMain.h"
+
 #include <Textures.h>
-#include <assetManager.h>
-#include <gameMain.h>
-#include <gameMap.h>
-#include <helpers.h>
 #include <imgui.h>
 #include <raylib.h>
 #include <raymath.h>
@@ -10,6 +8,11 @@
 #include <textureManager.h>
 
 #include <iostream>
+
+#include "assetManager.h"
+#include "gameMap.h"
+#include "helpers.h"
+#include "randomStuff.h"
 
 struct GameData {
   float posX = 100;
@@ -141,9 +144,11 @@ bool updateGame() {
         float size = 1;
         float posx = x * size;
         float posy = y * size;
-
+        std::ranlux24_base prng(x * y);
+        int atlasY = getRandomInt(prng, 0, 3);
+        printf("%d\n", atlasY);
         DrawTexturePro(assetManager.texturesWithWalls,
-                       getTextureAtlas(b.type, 0, 32, 32),
+                       getTextureAtlas(b.type, atlasY, 32, 32),
                        {posx, posy, size, size}, {0, 0}, 0.0f, WHITE);
       }
     }
@@ -162,46 +167,61 @@ bool updateGame() {
         float posx = x * size;
         float posy = y * size;
 
-        if (b.type == Block::woodLog) {
-          // fix out of range vector in edges
-          auto& adjLeft = gameData.gameMap.getBlockUnsafe(x - 1, y);
-          auto& adjRight = gameData.gameMap.getBlockUnsafe(x + 1, y);
-          auto& adjTop = gameData.gameMap.getBlockUnsafe(x, y - 1);
-          auto& adjBottm = gameData.gameMap.getBlockUnsafe(x, y + 1);
+        if (b.type != Block::air) {
+          float size = 1;
+          float posx = x * size;
+          float posy = y * size;
 
-          if (adjBottm.type != Block::woodLog &&
-              adjTop.type != Block::woodLog && adjLeft.type != Block::leaves &&
-              adjRight.type != Block::leaves) {
-            DrawTexturePro(assetManager.treeLog, getTextureAtlas(7, 0, 32, 32),
-                           {posx, posy, size, size}, {0, 0}, 0.0f, WHITE);
-          } else if (adjTop.type == Block::leaves) {
-            DrawTexturePro(assetManager.treeLog, getTextureAtlas(5, 0, 32, 32),
-                           {posx, posy, size, size}, {0, 0}, 0.0f, WHITE);
-          } else if (adjLeft.type == Block::leaves &&
-                     adjRight.type == Block::leaves) {
-            DrawTexturePro(assetManager.treeLog, getTextureAtlas(1, 0, 32, 32),
-                           {posx, posy, size, size}, {0, 0}, 0.0f, WHITE);
-          } else if (adjLeft.type == Block::leaves) {
-            DrawTexturePro(assetManager.treeLog, getTextureAtlas(3, 0, 32, 32),
-                           {posx, posy, size, size}, {0, 0}, 0.0f, WHITE);
-          } else if (adjRight.type == Block::leaves) {
-            DrawTexturePro(assetManager.treeLog, getTextureAtlas(2, 0, 32, 32),
-                           {posx, posy, size, size}, {0, 0}, 0.0f, WHITE);
-          } else if (adjTop.type != Block::woodLog) {
-            DrawTexturePro(assetManager.treeLog, getTextureAtlas(6, 0, 32, 32),
-                           {posx, posy, size, size}, {0, 0}, 0.0f, WHITE);
-          } else if (adjBottm.type != Block::woodLog) {
-            DrawTexturePro(assetManager.treeLog, getTextureAtlas(4, 0, 32, 32),
-                           {posx, posy, size, size}, {0, 0}, 0.0f, WHITE);
+          // Determine neighbor types safely (use safe accessor that returns
+          // nullptr on OOB)
+          auto leftPtr = gameData.gameMap.getBloackSafe(x - 1, y);
+          auto rightPtr = gameData.gameMap.getBloackSafe(x + 1, y);
+          auto topPtr = gameData.gameMap.getBloackSafe(x, y - 1);
+          auto bottomPtr = gameData.gameMap.getBloackSafe(x, y + 1);
+          using T = decltype(b.type);
+
+          T leftType = leftPtr ? leftPtr->type : Block::air;
+          T rightType = rightPtr ? rightPtr->type : Block::air;
+          T topType = topPtr ? topPtr->type : Block::air;
+          T bottomType = bottomPtr ? bottomPtr->type : Block::air;
+
+          Texture& tex = (b.type == Block::woodLog)
+                             ? assetManager.treeLog
+                             : assetManager.texturesWithWalls;
+
+          // Compute atlas index / coordinates in a single place
+          Rectangle src;
+          std::ranlux24_base prng(x * y);
+          int atlasY = getRandomInt(prng, 0, 3);
+          printf("%d\n", atlasY);
+          if (b.type == Block::woodLog) {
+            int atlasIndex;
+            if (bottomType != Block::woodLog && topType != Block::woodLog &&
+                leftType != Block::leaves && rightType != Block::leaves) {
+              atlasIndex = 7;
+            } else if (topType == Block::leaves) {
+              atlasIndex = 5;
+            } else if (leftType == Block::leaves &&
+                       rightType == Block::leaves) {
+              atlasIndex = 1;
+            } else if (leftType == Block::leaves) {
+              atlasIndex = 3;
+            } else if (rightType == Block::leaves) {
+              atlasIndex = 2;
+            } else if (topType != Block::woodLog) {
+              atlasIndex = 6;
+            } else if (bottomType != Block::woodLog) {
+              atlasIndex = 4;
+            } else {
+              atlasIndex = 0;
+            }
+            src = getTextureAtlas(atlasIndex, atlasY, 32, 32);
           } else {
-            DrawTexturePro(assetManager.treeLog, getTextureAtlas(0, 0, 32, 32),
-                           {posx, posy, size, size}, {0, 0}, 0.0f, WHITE);
+            src = getTextureAtlas(b.type, atlasY, 32, 32);
           }
 
-        } else {
-          DrawTexturePro(assetManager.texturesWithWalls,
-                         getTextureAtlas(b.type, 0, 32, 32),
-                         {posx, posy, size, size}, {0, 0}, 0.0f, WHITE);
+          DrawTexturePro(tex, src, {posx, posy, size, size}, {0, 0}, 0.0f,
+                         WHITE);
         }
       }
     }
