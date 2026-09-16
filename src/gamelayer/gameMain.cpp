@@ -144,7 +144,7 @@ bool updateGame() {
         float size = 1;
         float posx = x * size;
         float posy = y * size;
-        std::ranlux24_base prng(x * y);
+        std::ranlux24_base prng(posx * posy);
         int atlasY = getRandomInt(prng, 0, 3);
         printf("%d\n", atlasY);
         DrawTexturePro(assetManager.texturesWithWalls,
