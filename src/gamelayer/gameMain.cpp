@@ -22,6 +22,8 @@ struct GameData {
   GameMap backGroundMap;
 
   int selectedBlock = 0;
+  float cameraSpeed = 9.f;
+
   Camera2D camera;
 } gameData;
 
@@ -76,11 +78,14 @@ bool updateGame() {
   BeginMode2D(gameData.camera);
 
 #pragma region camera movement
-
-  if (IsKeyDown(KEY_A)) gameData.camera.target.x -= 9.f * deltaTime;
-  if (IsKeyDown(KEY_D)) gameData.camera.target.x += 9.f * deltaTime;
-  if (IsKeyDown(KEY_W)) gameData.camera.target.y -= 9.f * deltaTime;
-  if (IsKeyDown(KEY_S)) gameData.camera.target.y += 9.f * deltaTime;
+  if (IsKeyDown(KEY_A))
+    gameData.camera.target.x -= gameData.cameraSpeed * deltaTime;
+  if (IsKeyDown(KEY_D))
+    gameData.camera.target.x += gameData.cameraSpeed * deltaTime;
+  if (IsKeyDown(KEY_W))
+    gameData.camera.target.y -= gameData.cameraSpeed * deltaTime;
+  if (IsKeyDown(KEY_S))
+    gameData.camera.target.y += gameData.cameraSpeed * deltaTime;
 #pragma endregion
 
   Vector2 worldPos = GetScreenToWorld2D(GetMousePosition(), gameData.camera);
@@ -243,8 +248,13 @@ bool updateGame() {
   EndMode2D();
 
 #pragma region imgui
-  ImGui::Begin("Block Picker");
-  ImGui::Text("FPS: %d", GetFPS());
+  float pickerWidth =
+      Clamp(GetScreenWidth() * 0.30f, 220.0f, GetScreenWidth() * 0.5f);
+  float pickerHeight =
+      Clamp(GetScreenHeight() * 0.45f, 180.0f, GetScreenHeight() * 0.5f);
+  ImGui::SetNextWindowPos(ImVec2(10.0f, 10.0f), ImGuiCond_Always);
+  ImGui::SetNextWindowSize(ImVec2(pickerWidth, pickerHeight), ImGuiCond_Once);
+  ImGui::Begin("Block Picker", nullptr, ImGuiWindowFlags_HorizontalScrollbar);
   for (size_t i = 1; i < Block::BLOCKS_COUNT; i++) {
     ImGui::PushID(i);
 
@@ -265,6 +275,13 @@ bool updateGame() {
 
     ImGui::PopID();
   }
+  ImGui::End();
+  ImGui::SetNextWindowPos(ImVec2(10.0f, pickerHeight + 10.0f),
+                          ImGuiCond_Always);
+  ImGui::Begin("Camera contols", nullptr, ImGuiWindowFlags_HorizontalScrollbar);
+  ImGui::SliderFloat("Camera speed", &gameData.cameraSpeed, 1.f, 100.f);
+  ImGui::SliderFloat("Camera Zoom", &gameData.camera.zoom, 1.f, 200.f);
+
   ImGui::End();
 
 #pragma endregion
