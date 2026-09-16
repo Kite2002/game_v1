@@ -279,6 +279,8 @@ bool updateGame() {
   ImGui::SetNextWindowPos(ImVec2(10.0f, pickerHeight + 10.0f),
                           ImGuiCond_Always);
   ImGui::Begin("Camera contols", nullptr, ImGuiWindowFlags_HorizontalScrollbar);
+  ImGui::Text("FPS: %d", GetFPS());
+
   ImGui::SliderFloat("Camera speed", &gameData.cameraSpeed, 1.f, 100.f);
   ImGui::SliderFloat("Camera Zoom", &gameData.camera.zoom, 1.f, 200.f);
 
