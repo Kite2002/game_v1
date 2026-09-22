@@ -13,6 +13,7 @@
 #include "gameMap.h"
 #include "helpers.h"
 #include "randomStuff.h"
+#include "worldGen.h"
 
 struct GameData {
   float posX = 100;
@@ -37,8 +38,7 @@ bool initGame() {
 #pragma endregion
   assetManager.loadAll();
 
-  gameData.gameMap.create(700, 500);
-  gameData.backGroundMap.create(700, 500);
+  generateWorld(gameData.gameMap, 1551123213525111);
 
   printf("tilesPerRow = %d\n", assetManager.texturesWithWalls.width / 32);
   printf("tilesPerCol = %d\n", assetManager.texturesWithWalls.height / 32);
@@ -57,7 +57,7 @@ bool initGame() {
   //     }
   //   }
 
-  gameData.camera.target = {0, 0};
+  gameData.camera.target = {100, 100};
   gameData.camera.rotation = 0.0f;
   gameData.camera.zoom = 30.0f;
 
@@ -96,7 +96,6 @@ bool updateGame() {
     auto b = gameData.gameMap.getBloackSafe(blockX, blockY);
 
     if (b && b->type != 0) {
-      printf("%d", b->type);
       *b = {};
     } else {
       auto bg = gameData.backGroundMap.getBloackSafe(blockX, blockY);
@@ -137,27 +136,27 @@ bool updateGame() {
   startXView = Clamp(startXView, 0, gameData.gameMap.w - 1);
   endXView = Clamp(endXView, 0, gameData.gameMap.w - 1);
 
-  startYView = Clamp(startXView, 0, gameData.gameMap.h - 1);
-  endYView = Clamp(endXView, 0, gameData.gameMap.h - 1);
+  startYView = Clamp(startYView, 0, gameData.gameMap.h - 1);
+  endYView = Clamp(endYView, 0, gameData.gameMap.h - 1);
 
 #pragma region bg_rendering
-  for (int y = startYView; y < endYView; y++) {
-    for (int x = startXView; x < endXView; x++) {
-      auto& b = gameData.backGroundMap.getBlockUnsafe(x, y);
+  // for (int y = startYView; y < endYView; y++) {
+  //   for (int x = startXView; x < endXView; x++) {
+  //     auto& b = gameData.backGroundMap.getBlockUnsafe(x, y);
 
-      if (b.type != Block::air && b.type >= Block::dirtWall) {
-        float size = 1;
-        float posx = x * size;
-        float posy = y * size;
-        std::ranlux24_base prng(posx * posy);
-        int atlasY = getRandomInt(prng, 0, 3);
-        printf("%d\n", atlasY);
-        DrawTexturePro(assetManager.texturesWithWalls,
-                       getTextureAtlas(b.type, atlasY, 32, 32),
-                       {posx, posy, size, size}, {0, 0}, 0.0f, WHITE);
-      }
-    }
-  }
+  //     if (b.type != Block::air && b.type >= Block::dirtWall) {
+  //       float size = 1;
+  //       float posx = x * size;
+  //       float posy = y * size;
+  //       std::ranlux24_base prng(posx * posy);
+  //       int atlasY = getRandomInt(prng, 0, 3);
+  //       printf("%d\n", atlasY);
+  //       DrawTexturePro(assetManager.texturesWithWalls,
+  //                      getTextureAtlas(b.type, atlasY, 32, 32),
+  //                      {posx, posy, size, size}, {0, 0}, 0.0f, WHITE);
+  //     }
+  //   }
+  // }
   DrawRectangle(gameData.camera.target.x, gameData.camera.target.y, 1, 1, RED);
 
 #pragma endregion
@@ -198,7 +197,6 @@ bool updateGame() {
           Rectangle src;
           std::ranlux24_base prng(x * y);
           int atlasY = getRandomInt(prng, 0, 3);
-          printf("%d\n", atlasY);
           if (b.type == Block::woodLog) {
             int atlasIndex;
             if (bottomType != Block::woodLog && topType != Block::woodLog &&
@@ -282,7 +280,7 @@ bool updateGame() {
   ImGui::Text("FPS: %d", GetFPS());
 
   ImGui::SliderFloat("Camera speed", &gameData.cameraSpeed, 1.f, 100.f);
-  ImGui::SliderFloat("Camera Zoom", &gameData.camera.zoom, 1.f, 200.f);
+  ImGui::SliderFloat("Camera Zoom", &gameData.camera.zoom, 1.f, 100.f);
 
   ImGui::End();
 
