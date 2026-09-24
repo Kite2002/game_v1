@@ -38,7 +38,7 @@ bool initGame() {
 #pragma endregion
   assetManager.loadAll();
 
-  generateWorld(gameData.gameMap, 1551123213525111);
+  generateWorld(gameData.gameMap, 1234);
 
   printf("tilesPerRow = %d\n", assetManager.texturesWithWalls.width / 32);
   printf("tilesPerCol = %d\n", assetManager.texturesWithWalls.height / 32);
