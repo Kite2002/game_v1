@@ -38,11 +38,11 @@ void generateWorld(GameMap& gameMap, int seed) {
   stoneNoiseGen->SetFrequency(0.01);
 
   caveNoiseGen1->SetNoiseType(FastNoiseSIMD::NoiseType::SimplexFractal);
-  caveNoiseGen1->SetFractalOctaves(3);
+  caveNoiseGen1->SetFractalOctaves(1);
   caveNoiseGen1->SetFrequency(0.02);
 
   caveNoiseGen2->SetNoiseType(FastNoiseSIMD::NoiseType::PerlinFractal);
-  caveNoiseGen2->SetFractalOctaves(2);
+  caveNoiseGen2->SetFractalOctaves(1);
   caveNoiseGen2->SetFrequency(0.02);
 
   float* dirtNoise = FastNoiseSIMD::GetEmptySet(w);
@@ -93,7 +93,7 @@ void generateWorld(GameMap& gameMap, int seed) {
   // Generate Desert with noise
   int deserCoord = getRandomInt(prng, 100, w - 250);
 
-  int desertRadius = getRandomInt(prng, 80, 100);
+  int desertRadius = getRandomInt(prng, 60, 70);
 
   // GenerateWorld with Noise
 
@@ -162,7 +162,7 @@ void generateWorld(GameMap& gameMap, int seed) {
           b.type = Block::stone;
         }
       }
-      if (getCaveNoise1(x, y) > 0.3 || getCaveNoise2(x, y) > 0.3) {
+      if (getCaveNoise1(x, y) > 0.6 || getCaveNoise2(x, y) > 0.8) {
         b.type = Block::air;
       }
       gameMap.getBlockUnsafe(x, y) = b;
