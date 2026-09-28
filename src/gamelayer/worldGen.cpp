@@ -8,8 +8,8 @@
 #include "randomStuff.h"
 
 void generateWorld(GameMap& gameMap, int seed) {
-  const int w = 900;
-  const int h = 500;
+  const int w = 1200;
+  const int h = 800;
 
   gameMap.create(w, h);
 
@@ -37,13 +37,13 @@ void generateWorld(GameMap& gameMap, int seed) {
   stoneNoiseGen->SetFractalOctaves(7);
   stoneNoiseGen->SetFrequency(0.01);
 
-  caveNoiseGen1->SetNoiseType(FastNoiseSIMD::NoiseType::SimplexFractal);
+  caveNoiseGen1->SetNoiseType(FastNoiseSIMD::NoiseType::PerlinFractal);
   caveNoiseGen1->SetFractalOctaves(1);
-  caveNoiseGen1->SetFrequency(0.02);
+  caveNoiseGen1->SetFrequency(0.04);
 
-  caveNoiseGen2->SetNoiseType(FastNoiseSIMD::NoiseType::PerlinFractal);
+  caveNoiseGen2->SetNoiseType(FastNoiseSIMD::NoiseType::ValueFractal);
   caveNoiseGen2->SetFractalOctaves(1);
-  caveNoiseGen2->SetFrequency(0.02);
+  caveNoiseGen2->SetFrequency(0.04);
 
   float* dirtNoise = FastNoiseSIMD::GetEmptySet(w);
   float* stoneNoise = FastNoiseSIMD::GetEmptySet(w);
@@ -101,9 +101,9 @@ void generateWorld(GameMap& gameMap, int seed) {
   int dirtOffsetEnd = 60;
   int stoneOffsetStart = 0;
   int stoneOffsetEnd = 170;
-
+  int stoneHeight;
   for (int x = 0; x < w; x++) {
-    int stoneHeight =
+    stoneHeight =
         stoneOffsetStart + (stoneOffsetEnd - stoneOffsetStart) * stoneNoise[x];
     int dirtHeight =
         dirtOffsetStart + (dirtOffsetEnd - dirtOffsetStart) * dirtNoise[x];
@@ -162,13 +162,75 @@ void generateWorld(GameMap& gameMap, int seed) {
           b.type = Block::stone;
         }
       }
-      if (getCaveNoise1(x, y) > 0.6 || getCaveNoise2(x, y) > 0.8) {
+      if (getCaveNoise1(x, y) > 0.27) {
         b.type = Block::air;
       }
+      if (getCaveNoise2(x, y) > 0.9) {
+        b.type = Block::air;
+      }
+
       gameMap.getBlockUnsafe(x, y) = b;
     }
   }
 
+#pragma region perlin worms
+  for (int i = 0; i < 35; i++) {
+    std::ranlux24_base itrrng((seed + i) * seed);
+    // pick a random starting point
+    float x = getRandomInt(itrrng, 10, w - 10);
+    float y = getRandomInt(itrrng, stoneHeight + 51, h - 10);
+
+    // initial movement direction (-1 to 1  range)
+    float dirx = (getRandomFloat(itrrng, -1, 1));
+    float diry = (getRandomFloat(itrrng, -1, 1));
+
+    int wormLength = getRandomInt(itrrng, 400, 900);
+    float radius = getRandomFloat(itrrng, 3, 5);
+
+    int changeDirectionTime = getRandomInt(prng, 5, 20);
+
+    for (int j = 0; j < wormLength; j++) {
+      // dig a circle around the position
+      int intRadius = std::ceil(radius);
+      for (int ox = -intRadius; ox <= intRadius; ox++) {
+        for (int oy = -intRadius; oy <= intRadius; oy++) {
+          float distSq = oy * oy + ox * ox;
+          if (distSq <= radius * radius) {
+            int digx = x + ox;
+            int digy = y + oy;
+
+            auto b = gameMap.getBloackSafe(digx, digy);
+            if (b) {
+              b->type = Block::air;
+            }
+          }
+        }
+      }
+      changeDirectionTime--;
+      if (changeDirectionTime <= 0) {
+        changeDirectionTime = getRandomInt(itrrng, 5, 20);
+        float keepFactor = 0.8;
+
+        if (getRandomChance(itrrng, 0.3)) {
+          float keepFactor = 0.2;
+        }
+        // big chance we keep a very similar dir
+        dirx = dirx * keepFactor +
+               (getRandomFloat(itrrng, -1, 1)) * (1.f - keepFactor);
+        diry = diry * keepFactor +
+               (getRandomFloat(itrrng, -1, 1)) * (1.f - keepFactor);
+      }
+
+      // Move
+      x += dirx * 1.5f;
+      y += diry * 1.5f;
+
+      // Random Radius
+      radius += (getRandomFloat(itrrng, -0.2, 0.2));
+    }
+  }
+
+#pragma endregion
   // clear state after use
   FastNoiseSIMD::FreeNoiseSet(dirtNoise);
   FastNoiseSIMD::FreeNoiseSet(stoneNoise);
