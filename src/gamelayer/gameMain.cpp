@@ -230,11 +230,10 @@ bool updateGame() {
     }
   }
   DrawRectangle(gameData.camera.target.x, gameData.camera.target.y, 1, 1, RED);
-  DrawTexturePro(
-      assetManager.frame,
-      {0, 0, (float)assetManager.frame.width, (float)assetManager.frame.height},
-      {(float)blockX, (float)blockY, 1, 1}, {0, 0}, 0.0f,
-      gameData.gameMap.getBloackSafe(blockX, blockY) ? WHITE : RED);
+  DrawTexturePro(assetManager.texturesWithWalls,
+                 getTextureAtlas(gameData.selectedBlock, 0, 32, 32),
+                 {(float)blockX, (float)blockY, 1, 1}, {0, 0}, 0.0f,
+                 gameData.gameMap.getBloackSafe(blockX, blockY) ? WHITE : RED);
   EndMode2D();
 #pragma endregion
 
