@@ -227,6 +227,9 @@ void generateWorld(GameMap& gameMap, int seed) {
 
       // Random Radius
       radius += (getRandomFloat(itrrng, -0.2, 0.2));
+      if (radius < 1.5f) {
+        radius = 1.5f;
+      }
     }
   }
 
