@@ -24,6 +24,7 @@ struct GameData {
 
   int selectedBlock = 0;
   float cameraSpeed = 9.f;
+  bool showImgui = false;
 
   Camera2D camera;
 } gameData;
@@ -77,7 +78,7 @@ bool updateGame() {
   ClearBackground({75, 75, 150, 255});
   BeginMode2D(gameData.camera);
 
-#pragma region camera movement
+#pragma region keycontrols
   if (IsKeyDown(KEY_A))
     gameData.camera.target.x -= gameData.cameraSpeed * deltaTime;
   if (IsKeyDown(KEY_D))
@@ -86,13 +87,16 @@ bool updateGame() {
     gameData.camera.target.y -= gameData.cameraSpeed * deltaTime;
   if (IsKeyDown(KEY_S))
     gameData.camera.target.y += gameData.cameraSpeed * deltaTime;
+  if (IsKeyReleased(KEY_F11)) gameData.showImgui = !gameData.showImgui;
 #pragma endregion
 
   Vector2 worldPos = GetScreenToWorld2D(GetMousePosition(), gameData.camera);
   int blockX = (int)floor(worldPos.x);
   int blockY = (int)floor(worldPos.y);
 
-  if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
+#pragma region MouseControls
+
+  if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && !gameData.showImgui) {
     auto b = gameData.gameMap.getBloackSafe(blockX, blockY);
 
     if (b && b->type != 0) {
@@ -105,7 +109,7 @@ bool updateGame() {
     }
   }
 
-  if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
+  if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT) && !gameData.showImgui) {
     if (gameData.selectedBlock >= Block::dirtWall) {
       auto bg = gameData.backGroundMap.getBloackSafe(blockX, blockY);
       if (bg) {
@@ -122,6 +126,7 @@ bool updateGame() {
       }
     }
   }
+#pragma endregion
 
   Vector2 topLeftView = GetScreenToWorld2D({0, 0}, gameData.camera);
   Vector2 bottomRightView = GetScreenToWorld2D(
@@ -245,43 +250,47 @@ bool updateGame() {
   EndMode2D();
 
 #pragma region imgui
-  float pickerWidth =
-      Clamp(GetScreenWidth() * 0.30f, 220.0f, GetScreenWidth() * 0.5f);
-  float pickerHeight =
-      Clamp(GetScreenHeight() * 0.45f, 180.0f, GetScreenHeight() * 0.5f);
-  ImGui::SetNextWindowPos(ImVec2(10.0f, 10.0f), ImGuiCond_Always);
-  ImGui::SetNextWindowSize(ImVec2(pickerWidth, pickerHeight), ImGuiCond_Once);
-  ImGui::Begin("Block Picker", nullptr, ImGuiWindowFlags_HorizontalScrollbar);
-  for (size_t i = 1; i < Block::BLOCKS_COUNT; i++) {
-    ImGui::PushID(i);
+  if (gameData.showImgui) {
+    float pickerWidth =
+        Clamp(GetScreenWidth() * 0.30f, 220.0f, GetScreenWidth() * 0.5f);
+    float pickerHeight =
+        Clamp(GetScreenHeight() * 0.45f, 180.0f, GetScreenHeight() * 0.5f);
+    ImGui::SetNextWindowPos(ImVec2(10.0f, 10.0f), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(pickerWidth, pickerHeight), ImGuiCond_Once);
+    ImGui::Begin("Block Picker", nullptr, ImGuiWindowFlags_HorizontalScrollbar);
+    for (size_t i = 1; i < Block::BLOCKS_COUNT; i++) {
+      ImGui::PushID(i);
 
-    Rectangle src = getTextureAtlas(i, 0, 32, 32);
-    ImVec2 uv0 = {src.x / assetManager.texturesWithWalls.width,
-                  src.y / assetManager.texturesWithWalls.height};
-    ImVec2 uv1 = {(src.x + src.width) / assetManager.texturesWithWalls.width,
-                  (src.y + src.height) / assetManager.texturesWithWalls.height};
-    if (ImGui::ImageButton(
-            (ImTextureID)(intptr_t)assetManager.texturesWithWalls.id,
-            ImVec2(32.0f, 32.0f), uv0, uv1, -1, ImVec4(0, 0, 0, 0),
-            ImVec4(1, 1, 1, 1))) {
-      gameData.selectedBlock = i;
-    }
-    if ((i - 1) % 6 != 5) {  // 0-indexed, so button 6 is index 5
-      ImGui::SameLine(0.0f, 4.0f);
-    }
+      Rectangle src = getTextureAtlas(i, 0, 32, 32);
+      ImVec2 uv0 = {src.x / assetManager.texturesWithWalls.width,
+                    src.y / assetManager.texturesWithWalls.height};
+      ImVec2 uv1 = {
+          (src.x + src.width) / assetManager.texturesWithWalls.width,
+          (src.y + src.height) / assetManager.texturesWithWalls.height};
+      if (ImGui::ImageButton(
+              (ImTextureID)(intptr_t)assetManager.texturesWithWalls.id,
+              ImVec2(32.0f, 32.0f), uv0, uv1, -1, ImVec4(0, 0, 0, 0),
+              ImVec4(1, 1, 1, 1))) {
+        gameData.selectedBlock = i;
+      }
+      if ((i - 1) % 6 != 5) {  // 0-indexed, so button 6 is index 5
+        ImGui::SameLine(0.0f, 4.0f);
+      }
 
-    ImGui::PopID();
+      ImGui::PopID();
+    }
+    ImGui::End();
+    ImGui::SetNextWindowPos(ImVec2(10.0f, pickerHeight + 10.0f),
+                            ImGuiCond_Always);
+    ImGui::Begin("Camera contols", nullptr,
+                 ImGuiWindowFlags_HorizontalScrollbar);
+    ImGui::Text("FPS: %d", GetFPS());
+
+    ImGui::SliderFloat("Camera speed", &gameData.cameraSpeed, 1.f, 100.f);
+    ImGui::SliderFloat("Camera Zoom", &gameData.camera.zoom, 1.f, 100.f);
+
+    ImGui::End();
   }
-  ImGui::End();
-  ImGui::SetNextWindowPos(ImVec2(10.0f, pickerHeight + 10.0f),
-                          ImGuiCond_Always);
-  ImGui::Begin("Camera contols", nullptr, ImGuiWindowFlags_HorizontalScrollbar);
-  ImGui::Text("FPS: %d", GetFPS());
-
-  ImGui::SliderFloat("Camera speed", &gameData.cameraSpeed, 1.f, 100.f);
-  ImGui::SliderFloat("Camera Zoom", &gameData.camera.zoom, 1.f, 100.f);
-
-  ImGui::End();
 
 #pragma endregion
   return true;
