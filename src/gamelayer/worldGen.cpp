@@ -64,8 +64,11 @@ void generateWorld(GameMap& gameMap, int seed) {
     stoneNoise[i] = pow((stoneNoise[i] + 1) / 2, 0.1);
   }
 
+  // lamda function to get cave noise
   auto getCaveNoise1 = [&](int x, int y) { return caveNoise1[x + y * w]; };
   auto getCaveNoise2 = [&](int x, int y) { return caveNoise2[x + y * w]; };
+
+  // PRNG for random vals
   std::ranlux24_base prng(seed);
   int counter = getRandomInt(prng, 2, 4);
   for (int i = 0; i < counter; i++) {
